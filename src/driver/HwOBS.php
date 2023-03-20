@@ -188,7 +188,7 @@ class HwOBS extends Driver
      *
      * @return bool        删除结果
      */
-    public function delete(string $key)
+    public function delete(string $key): bool
     {
         try {
             $this->client->delete(
