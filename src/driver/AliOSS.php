@@ -25,14 +25,12 @@ class AliOSS extends Driver
         'connect_timeout' => 20,
         'chunk_size'      => 8196,
     ];
-    function __construct(array $config)
+    function __construct(array $config = [])
     {
         empty($config['endpoint']) ?: $this->config['endpoint'] = $config['endpoint'];
         empty($config['key']) ?: $this->config['key'] = $config['key'];
         empty($config['secret']) ?: $this->config['secret'] = $config['secret'];
-        empty($config['bucket']) ?: $this->bucket = $this->config['bucket'];
-
-        $this->bucket = $this->config['bucket'];
+        empty($config['bucket']) ?: $this->bucket = $config['bucket'];
 
         $this->client = new OssClient($this->config['key'], $this->config['secret'], $this->config['endpoint']);
         $this->client->setUseSSL(false);
