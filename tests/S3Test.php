@@ -52,6 +52,15 @@ class S3Test extends TestCase
         $this->assertStringContainsString($key, $url);
     }
 
+    public function testStaticUrl()
+    {
+        $key = '002iRMxrly1gvrjfdko17g60b4069npe02.gif';
+        $url = $this->s3->url($key, -1);
+        var_dump($url);
+        $this->assertStringEndsWith($key, $url);
+
+    }
+
     public function testPutUrl()
     {
         $key         = 'test.txt';

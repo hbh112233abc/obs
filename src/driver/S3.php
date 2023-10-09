@@ -102,7 +102,8 @@ class S3 extends Driver
      *
      * @return bool
      */
-    public function get(string $key, string $filePath): bool    {
+    public function get(string $key, string $filePath): bool
+    {
         $dir = dirname($filePath);
         if (!is_dir($dir)) {
             mkdir($dir, 0777, true);
@@ -133,6 +134,14 @@ class S3 extends Driver
      */
     public function url(string $key, int $expire = 3600): string
     {
+        if ($expire === -1) {
+            $this->client->putObjectAcl([
+                'Bucket' => $this->bucket,
+                'Key'    => $key,
+                'ACL'    => 'public-read',
+            ]);
+            return $this->client->getObjectUrl($this->bucket, $key);
+        }
         // 从client中获得一个commad对象
         $command = $this->client->getCommand(
             'GetObject',

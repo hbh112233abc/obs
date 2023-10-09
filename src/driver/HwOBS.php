@@ -128,13 +128,29 @@ class HwOBS extends Driver
      * 获取预授权链接
      *
      * @param string $key    对象key
-     * @param int    $expire 过期时间(秒),默认3600
+     * @param int    $expire 过期时间(秒),默认3600,如果设置为-1,则为永久有效公共读静态链接
      *
      * @return string
      */
     public function url(string $key, int $expire = 3600): string
     {
         try {
+            if ($expire === -1) {
+                //获得永久静态链接
+                $this->client->setObjectAcl(
+                    [
+                        'Bucket' => $this->bucket,
+                        'Key'    => $key,
+                        'ACL'    => ObsClient::AclPublicRead,
+                    ]
+                );
+                $prefix = $this->config['endpoint'];
+                if (str_ends_with($prefix, '/')) {
+                    $prefix = substr($prefix, 0, -1);
+                }
+                $prefix = str_replace('https://', 'https://' . $this->bucket . '.', $prefix);
+                return $prefix . '/' . $key;
+            }
             $this->checkCors();
             // 生成下载对象的带授权信息的URL
             $resp = $this->client->createSignedUrl(

@@ -51,6 +51,14 @@ class HwOBSTest extends TestCase
         $this->assertStringContainsString($key, $url);
     }
 
+    public function testStaticUrl()
+    {
+        $key = '1ae0dc66667511ee93f34ccc6a463368.png';
+        $url = $this->obs->url($key, -1);
+        var_dump($url);
+        $this->assertStringEndsWith($key, $url);
+    }
+
     public function testPutUrl()
     {
         $key = 'test.txt';

@@ -1,6 +1,7 @@
 <?php
 namespace bingher\obs\driver;
 
+use bingher\obs\Driver;
 use Qcloud\Cos\Client as CosClient;
 
 class COS extends Driver
@@ -120,6 +121,9 @@ class COS extends Driver
      */
     public function url(string $key, int $expire = 3600): string
     {
+        if ($expire === -1) {
+            return $this->client->getObjectUrlWithoutSign($this->bucket, $key);
+        }
         return $this->client->getObjectUrl($this->bucket, $key, $expire);
     }
 

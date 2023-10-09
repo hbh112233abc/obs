@@ -119,6 +119,21 @@ class AliOSS extends Driver
         ];
 
         try {
+            if ($expire === -1) {
+                //获得永久静态链接
+                $this->client->putObjectAcl(
+                    $this->bucket,
+                    $key,
+                    'public-read',
+                );
+                $prefix = $this->config['endpoint'];
+                $prefix = str_replace('-internal', '', $prefix);
+                $prefix = str_replace('http://', 'https://' . $this->bucket . '.', $prefix);
+                if (str_ends_with($prefix, '/')) {
+                    $prefix = substr($prefix, 0, -1);
+                }
+                return $prefix . '/' . $key;
+            }
             // 生成下载对象的带授权信息的URL
             $resp = $this->client->signUrl(
                 $this->bucket,
