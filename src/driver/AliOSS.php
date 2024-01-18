@@ -114,13 +114,13 @@ class AliOSS extends Driver
     /**
      * 获取预授权链接
      *
-     * @param string $key    对象key
-     * @param int    $expire 过期时间(秒),默认3600
-     * @param array  $headers 请求头部
+     * @param string $key         对象key
+     * @param int    $expire      有效期(秒)
+     * @param string $contentType 响应头部类型
      *
      * @return string
      */
-    public function url(string $key, int $expire = 3600, array $headers = []): string
+    public function url(string $key, int $expire = 3600, string $contentType = ''): string
     {
         $options = [
             "response-content-disposition" => "inline",
@@ -133,7 +133,6 @@ class AliOSS extends Driver
                     $this->bucket,
                     $key,
                     'public-read',
-                    ['Headers' => $headers],
                 );
                 $prefix = $this->config['endpoint'];
                 $prefix = str_replace('-internal', '', $prefix);
@@ -143,7 +142,9 @@ class AliOSS extends Driver
                 }
                 return $prefix . '/' . $key;
             }
-            $options['Headers'] = $headers;
+            if (!empty($contentType)) {
+                $options['ResponseContentType'] = $contentType;
+            }
             // 生成下载对象的带授权信息的URL
             $resp = $this->client->signUrl(
                 $this->bucket,

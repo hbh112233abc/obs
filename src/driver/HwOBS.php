@@ -130,23 +130,22 @@ class HwOBS extends Driver
     /**
      * 获取预授权链接
      *
-     * @param string $key    对象key
-     * @param int    $expire 过期时间(秒),默认3600,如果设置为-1,则为永久有效公共读静态链接
-     * @param array  $headers 请求头部
+     * @param string $key         对象key
+     * @param int    $expire      有效期(秒)
+     * @param string $contentType 响应头部类型
      *
      * @return string
      */
-    public function url(string $key, int $expire = 3600, array $headers = []): string
+    public function url(string $key, int $expire = 3600, string $contentType = ''): string
     {
         try {
             if ($expire === -1) {
                 //获得永久静态链接
                 $this->client->setObjectAcl(
                     [
-                        'Bucket'  => $this->bucket,
-                        'Key'     => $key,
-                        'ACL'     => ObsClient::AclPublicRead,
-                        'Headers' => $headers,
+                        'Bucket' => $this->bucket,
+                        'Key'    => $key,
+                        'ACL'    => ObsClient::AclPublicRead,
                     ]
                 );
                 $prefix = $this->config['endpoint'];
@@ -157,16 +156,17 @@ class HwOBS extends Driver
                 return $prefix . '/' . $key;
             }
             $this->checkCors();
+            $params = [
+                'Method'  => 'GET',
+                'Bucket'  => $this->bucket,
+                'Key'     => $key,
+                'Expires' => $expire,
+            ];
+            if (!empty($contentType)) {
+                $params['QueryParams']['ResponseContentType'] = $contentType;
+            }
             // 生成下载对象的带授权信息的URL
-            $resp = $this->client->createSignedUrl(
-                [
-                    'Method'  => 'GET',
-                    'Bucket'  => $this->bucket,
-                    'Key'     => $key,
-                    'Expires' => $expire,
-                    'Headers' => $headers,
-                ]
-            );
+            $resp = $this->client->createSignedUrl($params);
             return $resp['SignedUrl'];
         } catch (ObsException $obsException) {
             $this->error = $obsException->getExceptionMessage();

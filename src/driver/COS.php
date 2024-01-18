@@ -118,18 +118,22 @@ class COS extends Driver
     /**
      * 获取预授权链接
      *
-     * @param string $key    对象key
-     * @param int    $expire 过期时间(秒),默认3600
-     * @param array  $headers 请求头部
+     * @param string $key         对象key
+     * @param int    $expire      有效期(秒)
+     * @param string $contentType 响应头部类型
      *
      * @return string
      */
-    public function url(string $key, int $expire = 3600, array $headers = []): string
+    public function url(string $key, int $expire = 3600, string $contentType = ''): string
     {
-        if ($expire === -1) {
-            return $this->client->getObjectUrlWithoutSign($this->bucket, $key, ['Headers' => $headers]);
+        $option = [];
+        if (!empty($contentType)) {
+            $options['ResponseContentType'] = $contentType;
         }
-        return $this->client->getObjectUrl($this->bucket, $key, $expire, ['Headers' => $headers]);
+        if ($expire === -1) {
+            return $this->client->getObjectUrlWithoutSign($this->bucket, $key, $option);
+        }
+        return $this->client->getObjectUrl($this->bucket, $key, $expire, $option);
     }
 
     /**

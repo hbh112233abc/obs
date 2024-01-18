@@ -66,4 +66,15 @@ class HwOBSTest extends TestCase
         $this->assertStringContainsString($key, $url);
     }
 
+    public function testUrlResponseContentType()
+    {
+        $key = '2346dcf731a4a604d931764a1d4e3d72/SRCGC2400649/32cebf00b5b711eeb2a6da1422e042c9_1.pdf';
+        $url = $this->obs->url($key, 360, 'application/pdf');
+        print_r($url);
+        print_r('');
+        $respHeaders = get_headers($url, true);
+        print_r($respHeaders);
+        $this->assertEquals('application/pdf', $respHeaders['Content-Type']);
+    }
+
 }

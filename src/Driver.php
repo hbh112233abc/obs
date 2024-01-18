@@ -60,13 +60,13 @@ abstract class Driver
     /**
      * 获取文件访问链接
      *
-     * @param string $key     对象key
-     * @param int    $expire  有效期(秒)
-     * @param array  $headers 请求头部
+     * @param string $key         对象key
+     * @param int    $expire      有效期(秒)
+     * @param string $contentType 响应头部类型
      *
      * @return string
      */
-    abstract public function url(string $key, int $expire, array $headers = []);
+    abstract public function url(string $key, int $expire, string $contentType = '');
 
     /**
      * 获取预授权链接
