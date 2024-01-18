@@ -2,6 +2,7 @@
 namespace bingher\obs\driver;
 
 use bingher\obs\Driver;
+use bingher\obs\MimeType;
 use Obs\ObsClient;
 use Obs\ObsException;
 
@@ -54,6 +55,8 @@ class HwOBS extends Driver
         ];
         if (is_file($filePath)) {
             $param['SourceFile'] = $filePath;
+            $contentType         = MimeType::fileMime($filePath);
+            $param['Headers']    = ['Content-Type' => $contentType];
         } else {
             $param['Body'] = $filePath;
         }
@@ -129,19 +132,21 @@ class HwOBS extends Driver
      *
      * @param string $key    对象key
      * @param int    $expire 过期时间(秒),默认3600,如果设置为-1,则为永久有效公共读静态链接
+     * @param array  $headers 请求头部
      *
      * @return string
      */
-    public function url(string $key, int $expire = 3600): string
+    public function url(string $key, int $expire = 3600, array $headers = []): string
     {
         try {
             if ($expire === -1) {
                 //获得永久静态链接
                 $this->client->setObjectAcl(
                     [
-                        'Bucket' => $this->bucket,
-                        'Key'    => $key,
-                        'ACL'    => ObsClient::AclPublicRead,
+                        'Bucket'  => $this->bucket,
+                        'Key'     => $key,
+                        'ACL'     => ObsClient::AclPublicRead,
+                        'Headers' => $headers,
                     ]
                 );
                 $prefix = $this->config['endpoint'];
@@ -159,6 +164,7 @@ class HwOBS extends Driver
                     'Bucket'  => $this->bucket,
                     'Key'     => $key,
                     'Expires' => $expire,
+                    'Headers' => $headers,
                 ]
             );
             return $resp['SignedUrl'];
@@ -187,7 +193,7 @@ class HwOBS extends Driver
                     'Bucket'  => $this->bucket,
                     'Key'     => $key,
                     'Expires' => $expire,
-                    'Headers' => ['content-type' => $contentType],
+                    'Headers' => ['Content-Type' => $contentType],
                 ]
             );
             return [$resp['SignedUrl'], $resp['ActualSignedRequestHeaders']['Host']];

@@ -6,6 +6,7 @@ use Aws\S3\MultipartUploader;
 use Aws\S3\ObjectUploader;
 use Aws\S3\S3Client;
 use bingher\obs\Driver;
+use bingher\obs\MimeType;
 
 class S3 extends Driver
 {
@@ -55,6 +56,7 @@ class S3 extends Driver
         if (!is_file($filePath)) {
             throw new \Exception("File not found: " . $filePath);
         }
+        $contentType = MimeType::fileMime($filePath);
         // Using stream instead of file path
         $source = fopen($filePath, 'rb');
 
@@ -63,7 +65,8 @@ class S3 extends Driver
             $this->bucket,
             $key,
             $source,
-            $acl
+            $acl,
+            ['Headers' => ['Content-Type' => $contentType]]
         );
 
         do {
@@ -127,18 +130,20 @@ class S3 extends Driver
     /**
      * 获取预授权链接
      *
-     * @param string $key    对象key
-     * @param int    $expire 过期时间(秒),默认3600
+     * @param string $key     对象key
+     * @param int    $expire  过期时间(秒),默认3600
+     * @param array  $headers 请求头部
      *
      * @return string
      */
-    public function url(string $key, int $expire = 3600): string
+    public function url(string $key, int $expire = 3600, array $headers = []): string
     {
         if ($expire === -1) {
             $this->client->putObjectAcl([
-                'Bucket' => $this->bucket,
-                'Key'    => $key,
-                'ACL'    => 'public-read',
+                'Bucket'  => $this->bucket,
+                'Key'     => $key,
+                'ACL'     => 'public-read',
+                'Headers' => $headers,
             ]);
             return $this->client->getObjectUrl($this->bucket, $key);
         }
@@ -146,8 +151,9 @@ class S3 extends Driver
         $command = $this->client->getCommand(
             'GetObject',
             [
-                'Bucket' => $this->bucket,
-                'Key'    => $key,
+                'Bucket'  => $this->bucket,
+                'Key'     => $key,
+                'Headers' => $headers,
             ]
         );
 
@@ -177,8 +183,9 @@ class S3 extends Driver
         $command = $this->client->getCommand(
             'PutObject',
             [
-                'Bucket' => $this->bucket,
-                'Key'    => $key,
+                'Bucket'  => $this->bucket,
+                'Key'     => $key,
+                'Headers' => ['Content-Type' => $contentType],
             ]
         );
         // 获得带有效期的pre-signed URL

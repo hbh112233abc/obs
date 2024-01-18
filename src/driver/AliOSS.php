@@ -2,6 +2,7 @@
 namespace bingher\obs\driver;
 
 use bingher\obs\Driver;
+use bingher\obs\MimeType;
 use OSS\Core\OssException;
 use OSS\Model\CorsConfig;
 use OSS\Model\CorsRule;
@@ -32,7 +33,11 @@ class AliOSS extends Driver
         empty($config['secret']) ?: $this->config['secret'] = $config['secret'];
         empty($config['bucket']) ?: $this->bucket = $config['bucket'];
 
-        $this->client = new OssClient($this->config['key'], $this->config['secret'], $this->config['endpoint']);
+        $this->client = new OssClient(
+            $this->config['key'],
+            $this->config['secret'],
+            $this->config['endpoint']
+        );
         $this->client->setUseSSL(false);
         $this->checkCors();
     }
@@ -48,7 +53,9 @@ class AliOSS extends Driver
     public function put(string $key, string $filePath): bool
     {
         try {
-            $this->client->uploadFile($this->bucket, $key, $filePath);
+            $contentType = MimeType::fileMime($filePath);
+            $options     = ['Headers' => ['Content-Type' => $contentType]];
+            $this->client->uploadFile($this->bucket, $key, $filePath, $options);
             return true;
         } catch (OssException $e) {
             $this->error = $e->getMessage();
@@ -109,10 +116,11 @@ class AliOSS extends Driver
      *
      * @param string $key    对象key
      * @param int    $expire 过期时间(秒),默认3600
+     * @param array  $headers 请求头部
      *
      * @return string
      */
-    public function url(string $key, int $expire = 3600): string
+    public function url(string $key, int $expire = 3600, array $headers = []): string
     {
         $options = [
             "response-content-disposition" => "inline",
@@ -125,6 +133,7 @@ class AliOSS extends Driver
                     $this->bucket,
                     $key,
                     'public-read',
+                    ['Headers' => $headers],
                 );
                 $prefix = $this->config['endpoint'];
                 $prefix = str_replace('-internal', '', $prefix);
@@ -134,6 +143,7 @@ class AliOSS extends Driver
                 }
                 return $prefix . '/' . $key;
             }
+            $options['Headers'] = $headers;
             // 生成下载对象的带授权信息的URL
             $resp = $this->client->signUrl(
                 $this->bucket,

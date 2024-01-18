@@ -2,6 +2,7 @@
 namespace bingher\obs\driver;
 
 use bingher\obs\Driver;
+use bingher\obs\MimeType;
 use Qcloud\Cos\Client as CosClient;
 
 class COS extends Driver
@@ -51,14 +52,17 @@ class COS extends Driver
      */
     public function put(string $key, string $filePath): bool
     {
+        $options = [];
         if (is_file($filePath)) {
-            $body = fopen($filePath, 'rb');
+            $contentType        = MimeType::fileMime($filePath);
+            $options['Headers'] = ['Content-Type' => $contentType];
+            $body               = fopen($filePath, 'rb');
         } else {
             $body = $filePath;
         }
 
         try {
-            $this->client->Upload($this->bucket, $key, $body);
+            $this->client->Upload($this->bucket, $key, $body, $options);
             return true;
         } catch (\Exception $e) {
             $this->error = $e->getMessage();
@@ -116,15 +120,16 @@ class COS extends Driver
      *
      * @param string $key    对象key
      * @param int    $expire 过期时间(秒),默认3600
+     * @param array  $headers 请求头部
      *
      * @return string
      */
-    public function url(string $key, int $expire = 3600): string
+    public function url(string $key, int $expire = 3600, array $headers = []): string
     {
         if ($expire === -1) {
-            return $this->client->getObjectUrlWithoutSign($this->bucket, $key);
+            return $this->client->getObjectUrlWithoutSign($this->bucket, $key, ['Headers' => $headers]);
         }
-        return $this->client->getObjectUrl($this->bucket, $key, $expire);
+        return $this->client->getObjectUrl($this->bucket, $key, $expire, ['Headers' => $headers]);
     }
 
     /**
@@ -151,7 +156,7 @@ class COS extends Driver
                     'Params'  => [],
                     //http 请求参数，传入的请求参数需与实际请求相同，能够防止用户篡改此HTTP请求的参数,默认为空
                     'Headers' => [
-                        'content-type' => $contentType,
+                        'Content-Type' => $contentType,
                     ],
                     //http 请求头部，传入的请求头部需包含在实际请求中，能够防止用户篡改签入此处的HTTP请求头部,默认签入host
                 ],
