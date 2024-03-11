@@ -6,6 +6,7 @@
 
 - [x] huawei OBS
 - [x] minio
+- [x] seaweedFS
 - [x] amazon S3
 - [x] aliyun OSS
 - [x] tencent COS
