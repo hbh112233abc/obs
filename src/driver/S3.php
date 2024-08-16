@@ -16,15 +16,16 @@ class S3 extends Driver
      * @var array
      */
     protected $config = [
-        'version'                 => 'latest',
-        'region'                  => 'cn-hw',
-        'endpoint'                => 'http://192.168.103.38:9000',
-        'use_path_style_endpoint' => true,
-        'http'                    => ['verify' => false],
-        'credentials'             => [
+        'version'                          => 'latest',
+        'region'                           => 'cn-hw',
+        'endpoint'                         => 'http://192.168.103.38:9000',
+        'use_path_style_endpoint'          => true,
+        'http'                             => ['verify' => false],
+        'credentials'                      => [
             'key'    => 'minioadmin',
             'secret' => 'minioadmin',
         ],
+        'suppress_php_deprecation_warning' => true,
     ];
 
     /**
