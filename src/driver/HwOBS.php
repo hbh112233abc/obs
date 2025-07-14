@@ -81,7 +81,7 @@ class HwOBS extends Driver
     public function get(string $key, string $filePath): bool
     {
         $dir = dirname($filePath);
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             mkdir($dir, 0777, true);
         }
 
@@ -152,6 +152,9 @@ class HwOBS extends Driver
                 if (str_ends_with($prefix, '/')) {
                     $prefix = substr($prefix, 0, -1);
                 }
+                if (strpos('https://', $prefix) !== 0) {
+                    $prefix = 'https://' . $prefix;
+                }
                 $prefix = str_replace('https://', 'https://' . $this->bucket . '.', $prefix);
                 return $prefix . '/' . $key;
             }
@@ -162,7 +165,7 @@ class HwOBS extends Driver
                 'Key'     => $key,
                 'Expires' => $expire,
             ];
-            if (!empty($contentType)) {
+            if (! empty($contentType)) {
                 $params['QueryParams']['ResponseContentType'] = $contentType;
             }
             // 生成下载对象的带授权信息的URL
@@ -225,7 +228,6 @@ class HwOBS extends Driver
             return false;
         }
     }
-
 
     /**
      * 判断对象是否存在
