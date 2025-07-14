@@ -53,7 +53,7 @@ abstract class Driver
      * @param string $key      对象key
      * @param string $filePath 本地文件路径
      *
-     * @return void
+     * @return bool
      */
     abstract public function get(string $key, string $filePath);
 
@@ -66,7 +66,7 @@ abstract class Driver
      *
      * @return string
      */
-    abstract public function url(string $key, int $expire, string $contentType = '');
+    abstract public function url(string $key, int $expire = 3600, string $contentType = '');
 
     /**
      * 获取预授权链接
@@ -101,9 +101,9 @@ abstract class Driver
      * 下载文件到本地
      *
      * @param string $url  文件地址
-     * @param string $path 存放路径
+     * @param string $filePath 存放路径
      *
-     * @return string
+     * @return bool
      */
     public function download(string $url, string $filePath)
     {
@@ -119,7 +119,7 @@ abstract class Driver
         }
         $data = $response->getBody();
         file_put_contents($filePath, $data);
-        return $filePath;
+        return is_file($filePath);
     }
 
     /**
