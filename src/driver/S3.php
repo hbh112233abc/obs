@@ -29,6 +29,13 @@ class S3 extends Driver
     ];
 
     /**
+     * 连接客户端
+     *
+     * @var S3Client
+     */
+    public $client;
+
+    /**
      * 构造函数
      *
      * @param array $config 配置信息
@@ -54,7 +61,7 @@ class S3 extends Driver
      */
     public function put(string $key, string $filePath, string $acl = 'private'): bool
     {
-        if (!is_file($filePath)) {
+        if (! is_file($filePath)) {
             throw new \Exception("File not found: " . $filePath);
         }
         $contentType = MimeType::fileMime($filePath);
@@ -91,7 +98,7 @@ class S3 extends Driver
                 $this->error = $e->getMessage();
                 return false;
             }
-        } while (!isset($result));
+        } while (! isset($result));
 
         fclose($source);
 
@@ -109,7 +116,7 @@ class S3 extends Driver
     public function get(string $key, string $filePath): bool
     {
         $dir = dirname($filePath);
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             mkdir($dir, 0777, true);
         }
 
@@ -155,7 +162,7 @@ class S3 extends Driver
                 'Key'    => $key,
             ]
         );
-        if (!empty($contentType)) {
+        if (! empty($contentType)) {
             $command['ResponseContentType'] = $contentType;
         }
 

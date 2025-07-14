@@ -26,12 +26,19 @@ class AliOSS extends Driver
         'connect_timeout' => 20,
         'chunk_size'      => 8196,
     ];
-    function __construct(array $config = [])
+    /**
+     * 连接客户端
+     *
+     * @var OssClient
+     */
+    public $client;
+
+    public function __construct(array $config = [])
     {
         empty($config['endpoint']) ?: $this->config['endpoint'] = $config['endpoint'];
-        empty($config['key']) ?: $this->config['key'] = $config['key'];
-        empty($config['secret']) ?: $this->config['secret'] = $config['secret'];
-        empty($config['bucket']) ?: $this->bucket = $config['bucket'];
+        empty($config['key']) ?: $this->config['key']           = $config['key'];
+        empty($config['secret']) ?: $this->config['secret']     = $config['secret'];
+        empty($config['bucket']) ?: $this->bucket               = $config['bucket'];
 
         $this->client = new OssClient(
             $this->config['key'],
@@ -74,7 +81,7 @@ class AliOSS extends Driver
     public function get(string $key, string $filePath): bool
     {
         $dir = dirname($filePath);
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             mkdir($dir, 0777, true);
         }
         try {
@@ -142,7 +149,7 @@ class AliOSS extends Driver
                 }
                 return $prefix . '/' . $key;
             }
-            if (!empty($contentType)) {
+            if (! empty($contentType)) {
                 $options['ResponseContentType'] = $contentType;
             }
             // 生成下载对象的带授权信息的URL
@@ -211,7 +218,6 @@ class AliOSS extends Driver
             return false;
         }
     }
-
 
     /**
      * 判断对象是否存在

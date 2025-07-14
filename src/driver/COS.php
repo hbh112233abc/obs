@@ -23,7 +23,15 @@ class COS extends Driver
         'connect_timeout' => 20,
         'chunk_size'      => 8196,
     ];
-    function __construct(array $config)
+
+    /**
+     * 连接客户端
+     *
+     * @var CosClient
+     */
+    public $client;
+
+    public function __construct(array $config)
     {
         $this->config['endpoint'] = $config['endpoint'] ?? '';
         $this->config['key']      = $config['key'] ?? '';
@@ -31,7 +39,7 @@ class COS extends Driver
         $this->config['region']   = $config['region'] ?? '';
         $this->bucket             = $config['bucket'] ?? '';
 
-        $options      = [
+        $options = [
             'region'      => $this->config['region'],
             'schema'      => $this->config['ssl_verify'] ? 'https' : 'http',
             'credentials' => [
@@ -85,7 +93,7 @@ class COS extends Driver
     public function get(string $key, string $filePath): bool
     {
         $dir = dirname($filePath);
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             mkdir($dir, 0777, true);
         }
         try {
@@ -127,7 +135,7 @@ class COS extends Driver
     public function url(string $key, int $expire = 3600, string $contentType = ''): string
     {
         $option = [];
-        if (!empty($contentType)) {
+        if (! empty($contentType)) {
             $options['ResponseContentType'] = $contentType;
         }
         if ($expire === -1) {
@@ -205,5 +213,9 @@ class COS extends Driver
      */
     public function exist(string $key): bool
     {
+        return $this->client->doesObjectExist(
+            $this->bucket,
+            $key
+        );
     }
 }

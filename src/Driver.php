@@ -12,7 +12,7 @@ abstract class Driver
     /**
      * 连接客户端
      *
-     * @var \stdClass
+     * @var object
      */
     public $client;
 

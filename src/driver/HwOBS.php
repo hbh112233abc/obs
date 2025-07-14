@@ -25,6 +25,13 @@ class HwOBS extends Driver
     ];
 
     /**
+     * 连接客户端
+     *
+     * @var ObsClient
+     */
+    public $client;
+
+    /**
      * 构造函数
      *
      * @param array $config 配置参数
