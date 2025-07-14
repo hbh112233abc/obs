@@ -4,6 +4,11 @@ namespace bingher\obs;
 use ReflectionClass;
 use ReflectionException;
 
+/**
+ * 对象存储客户端
+ *
+ * @mixin Driver
+ */
 class OBS
 {
     protected $namespace = __NAMESPACE__;

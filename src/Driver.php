@@ -77,7 +77,7 @@ abstract class Driver
      *
      * @return array [url,host]
      */
-    abstract public function putUrl(string $key, string $contentType, int $expire);
+    abstract public function putUrl(string $key, string $contentType, int $expire = 3600);
 
     /**
      * 判断对象是否存在
@@ -108,7 +108,7 @@ abstract class Driver
     public function download(string $url, string $filePath)
     {
         $dir = dirname($filePath);
-        if (!is_dir($dir)) {
+        if (! is_dir($dir)) {
             mkdir($dir, 0777, true);
         }
 
@@ -121,7 +121,6 @@ abstract class Driver
         file_put_contents($filePath, $data);
         return $filePath;
     }
-
 
     /**
      * 获取或设置bucket
