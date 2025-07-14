@@ -152,7 +152,7 @@ class HwOBS extends Driver
                 if (str_ends_with($prefix, '/')) {
                     $prefix = substr($prefix, 0, -1);
                 }
-                if (strpos('https://', $prefix) !== 0) {
+                if (strpos($prefix, 'https://') !== 0) {
                     $prefix = 'https://' . $prefix;
                 }
                 $prefix = str_replace('https://', 'https://' . $this->bucket . '.', $prefix);
