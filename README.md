@@ -8,45 +8,41 @@ OBS是一个轻量级的统一对象存储客户端库，为多种云存储服�
 
 ## 支持平台
 
-- [x] 阿里云OSS (AliOSS)
-- [x] 腾讯云COS (COS)
-- [x] 华为云OBS (HwOBS)
-- [x] MinIO (MinIO)
-- [x] AWS S3 (S3)
-- [x] SeaweedFS (SeaweedFS)
-- [x] RustFS (RustFS)
+- [x] 阿里云OSS (AliOSS) [官方文档](https://help.aliyun.com/document_detail/85580.html)
+- [x] 腾讯云COS (COS) [官方文档](https://cloud.tencent.com/document/product/436/12266)
+- [x] 华为云OBS (HwOBS) [官方文档](https://support.huaweicloud.com/sdk-php-devg-obs/obs_28_0105.html)
+- [x] AWS S3 (S3) [官方文档](https://docs.aws.amazon.com/aws-sdk-php/v3/api/namespace-Aws.S3.html)
+- [x] MinIO (MinIO) [官方文档](https://docs.min.io/enterprise/aistor-object-store/)
+- [x] SeaweedFS (SeaweedFS) [官方文档](https://github.com/seaweedfs/seaweedfs)
+- [x] RustFS (RustFS) [官方文档](https://docs.rustfs.com/zh/)
 
 ## 安装方法
 
-### 基础库安装 [必须]
+通过Composer安装核心包：
 
 ```shell
 composer require bingher/obs
 ```
 
-### 驱动依赖安装 [按需选择]
+### 按需安装驱动依赖
 
-根据您使用的存储服务类型，安装相应的依赖：
+本项目支持按需安装驱动依赖，根据您使用的存储服务，只需安装对应的驱动包：
 
-- **阿里云OSS** [官方文档](https://help.aliyun.com/document_detail/85580.html)
-  ```shell
-  composer require aliyuncs/oss-sdk-php
-  ```
+```shell
+# 使用阿里云OSS
+echo '安装阿里云OSS驱动' && composer require aliyuncs/oss-sdk-php
 
-- **腾讯云COS** [官方文档](https://cloud.tencent.com/document/product/436/12266)
-  ```shell
-  composer require qcloud/cos-sdk-v5
-  ```
+# 使用腾讯云COS
+echo '安装腾讯云COS驱动' && composer require qcloud/cos-sdk-v5
 
-- **华为云OBS** [官方文档](https://support.huaweicloud.com/sdk-php-devg-obs/obs_28_0105.html)
-  ```shell
-  composer require obs/esdk-obs-php
-  ```
+# 使用华为云OBS
+echo '安装华为云OBS驱动' && composer require obs/esdk-obs-php
 
-- **MinIO/AWS S3/SeaweedFS/RustFS** [官方文档](https://docs.aws.amazon.com/aws-sdk-php/v3/api/namespace-Aws.S3.html)
-  ```shell
-  composer require aws/aws-sdk-php
-  ```
+# 使用AWS S3、MinIO、SeaweedFS或RustFS
+echo '安装AWS SDK驱动' && composer require aws/aws-sdk-php
+```
+
+> 注意：如果您尝试使用某个驱动但未安装相应的依赖包，系统会提供明确的错误提示，指导您安装缺少的包。
 
 ## 快速开始
 
