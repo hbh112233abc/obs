@@ -469,10 +469,17 @@ class MimeType
     static public function fileMime(string $file): string
     {
         if (function_exists('finfo_file') && is_file($file)) {
-            $finfo = \finfo_open(FILEINFO_MIME_TYPE);
-            $mime  = \finfo_file($finfo, $file);
-            \finfo_close($finfo);
-            return $mime;
+            $finfo = null;
+            try {
+                $finfo = \finfo_open(FILEINFO_MIME_TYPE);
+                $mime  = \finfo_file($finfo, $file);
+                return $mime;
+            } finally {
+                // 确保finfo资源正确关闭
+                if (is_resource($finfo)) {
+                    \finfo_close($finfo);
+                }
+            }
         }
         $ext = \pathinfo($file, PATHINFO_EXTENSION);
         return static::mime($ext);

@@ -8,6 +8,11 @@
             "bingher\\obs\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "bingher\\obs\\tests\\": "tests/"
+        }
+    },
     "authors": [
         {
             "name": "hbh112233abc",

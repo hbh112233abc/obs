@@ -3,6 +3,7 @@ namespace bingher\obs;
 
 use ReflectionClass;
 use ReflectionException;
+use bingher\obs\DriverType;
 
 /**
  * 对象存储客户端
@@ -11,40 +12,91 @@ use ReflectionException;
  */
 class OBS
 {
-    protected $namespace = __NAMESPACE__;
-    protected $driver;
+    protected string $namespace = __NAMESPACE__;
+    protected Driver $driver;
 
     /**
-     * config array
+     * 客户端配置数组
      *
-     * @var array
+     * @var array{
+     *     type: string,
+     *     endpoint?: string,
+     *     key?: string,
+     *     secret?: string,
+     *     bucket?: string,
+     *     region?: string,
+     *     ssl_verify?: bool,
+     *     timeout?: int,
+     *     connect_timeout?: int,
+     *     driver_options?: array<string, mixed>,
+     *     ...
+     * }|
+     * array<string, mixed>
      */
-    public $config = [];
+    public array $config = [];
 
+    /**
+     * 构造函数
+     *
+     * @param array{
+     *     type: string,
+     *     endpoint?: string,
+     *     key?: string,
+     *     secret?: string,
+     *     bucket?: string,
+     *     region?: string,
+     *     ssl_verify?: bool,
+     *     timeout?: int,
+     *     connect_timeout?: int,
+     *     driver_options?: array<string, mixed>,
+     *     ...
+     * } $config 配置参数
+     */
     public function __construct(array $config)
     {
         $this->config = array_merge($this->config, $config);
 
         $type = $config['type'];
+        $this->setDriver($type);
+    }
+
+    /**
+     * 切换驱动
+     *
+     * @param string $type 驱动类型（推荐使用DriverType常量）
+     * @return $this
+     * @throws \Exception
+     */
+    public function setDriver(string $type): self
+    {
+        $this->config['type'] = $type;
+        
+        // 使用DriverType验证驱动类型
+        if (!DriverType::isValid($type)) {
+            throw new \Exception(
+                'Invalid driver type: ' . $type . 
+                '. Must be one of: ' . implode(', ', DriverType::getValues())
+            );
+        }
+        
         try {
             $class   = $this->namespace . '\\driver\\' . $type;
             $reflect = new ReflectionClass($class);
         } catch (ReflectionException $e) {
-            $drivers = json_encode(
-                array_map(
-                    function ($dir) {
-                        return str_replace('.php', '', $dir);
-                    },
-                    scandir(__DIR__ . '/driver')
-                )
-            );
-            throw new \Exception('class not exists: ' . $class . ' must one of ' . $drivers);
+            throw new \Exception('Driver class not exists: ' . $class . '. Error: ' . $e->getMessage());
         }
-
-        $this->driver = $reflect->newInstance($config);
+        $this->driver = $reflect->newInstance($this->config);
+        return $this;
     }
 
-    public function __call($method, $args)
+    /**
+     * 调用驱动方法
+     *
+     * @param string $method 方法名
+     * @param array<int, mixed> $args 参数
+     * @return mixed
+     */
+    public function __call(string $method, array $args): mixed
     {
         return call_user_func_array([$this->driver, $method], $args);
     }

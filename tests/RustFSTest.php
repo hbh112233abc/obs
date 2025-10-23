@@ -1,16 +1,16 @@
 <?php
 
-use bingher\obs\driver\COS;
+use bingher\obs\driver\RustFS;
 use bingher\obs\tests\TestHelper;
 use PHPUnit\Framework\TestCase;
 
 /**
- * COS驱动实际运行测试
+ * RustFS驱动实际运行测试
  */
-class COSTest extends TestCase
+class RustFSTest extends TestCase
 {
     /**
-     * @var COS
+     * @var RustFS
      */
     protected $obs;
 
@@ -32,17 +32,17 @@ class COSTest extends TestCase
     protected function setUp(): void
     {
         // 加载配置
-        $config = TestHelper::loadConfig('COS');
+        $config = TestHelper::loadConfig('RustFS');
         if (! $config) {
-            $this->markTestSkipped('COS配置不存在');
+            $this->markTestSkipped('RustFS配置不存在');
         }
 
-        // 创建真实的COS实例
-        $this->obs = new COS($config);
+        // 创建真实的RustFS实例
+        $this->obs = new RustFS($config);
 
         // 准备测试数据
         $this->testKey      = 'test_' . uniqid() . '.txt';
-        $this->testFilePath = TestHelper::createTestFile('This is a test file for COS.');
+        $this->testFilePath = TestHelper::createTestFile('This is a test file for RustFS.');
     }
 
     /**
@@ -148,7 +148,6 @@ class COSTest extends TestCase
 
         // 验证URL格式
         $this->assertNotEmpty($url, '获取URL失败: ' . $this->obs->getError());
-        $this->assertStringStartsWith('https://', $url);
         $this->assertStringContainsString($this->testKey, $url);
     }
 
@@ -163,7 +162,7 @@ class COSTest extends TestCase
         // 验证结果
         $this->assertIsArray($result, '获取上传URL失败: ' . $this->obs->getError());
         $this->assertCount(2, $result);
-        $this->assertStringStartsWith('https://', $result[0]);
+        $this->assertNotEmpty($result[0]);
         $this->assertNotEmpty($result[1]);
     }
 }

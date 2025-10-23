@@ -8,46 +8,58 @@ use Qcloud\Cos\Client as CosClient;
 class COS extends Driver
 {
     /**
-     * 配置信息数组
-     *
-     * @var array
-     */
-    protected $config = [
-        'key'             => '*** Provide your Access Key ***',
-        'secret'          => '*** Provide your Secret Key ***',
-        'endpoint'        => 'https://your-endpoint',
-        'region'          => '*** Provide server Region ***',
-        'ssl_verify'      => false,
-        'max_retry_count' => 3,
-        'socket_timeout'  => 20,
-        'connect_timeout' => 20,
-        'chunk_size'      => 8196,
-    ];
-
-    /**
      * 连接客户端
      *
      * @var CosClient
      */
     public $client;
 
-    public function __construct(array $config)
+    /**
+     * 构造函数
+     *
+     * @param array<string, mixed> $config 统一格式的配置参数
+     */
+    public function __construct(array $config = [])
     {
-        $this->config['endpoint'] = $config['endpoint'] ?? '';
-        $this->config['key']      = $config['key'] ?? '';
-        $this->config['secret']   = $config['secret'] ?? '';
-        $this->config['region']   = $config['region'] ?? '';
-        $this->bucket             = $config['bucket'] ?? '';
-
-        $options = [
-            'region'      => $this->config['region'],
+        // 使用父类的标准化配置方法
+        $this->config = $this->normalizeConfig($config);
+        
+        // 转换统一配置为腾讯COS SDK所需的特定格式
+        $cosConfig = $this->getDriverConfig();
+        
+        $this->client = new CosClient($cosConfig);
+    }
+    
+    /**
+     * 获取腾讯COS驱动特定的配置
+     *
+     * @return array{
+     *     region: string,
+     *     schema: string,
+     *     credentials: array{
+     *         secretId: string,
+     *         secretKey: string
+     *     },
+     *     timeout: int,
+     *     connect_timeout: int,
+     *     ...
+     * }
+     */
+    protected function getDriverConfig(): array
+    {
+        $config = [
+            'region'      => $this->config['region'] ?? '',
             'schema'      => $this->config['ssl_verify'] ? 'https' : 'http',
             'credentials' => [
                 'secretId'  => $this->config['key'],
                 'secretKey' => $this->config['secret'],
             ],
+            'timeout'     => $this->config['timeout'],
+            'connect_timeout' => $this->config['connect_timeout'],
         ];
-        $this->client = new CosClient($options);
+        
+        // 合并驱动特定选项
+        return array_merge($config, $this->config['driver_options'] ?? []);
     }
 
     /**
@@ -55,18 +67,23 @@ class COS extends Driver
      *
      * @param string $key      对象key
      * @param string $filePath 本地文件路径
+     * @param string $acl      权限名称 private,public-read,public-read-write
+     * @param string $contentType 响应头部类型
      *
      * @return bool
      */
-    public function put(string $key, string $filePath): bool
+    public function put(string $key, string $filePath, string $acl = 'private', string $contentType = ''): bool
     {
         $options = [];
         if (is_file($filePath)) {
-            $contentType        = MimeType::fileMime($filePath);
-            $options['Headers'] = ['Content-Type' => $contentType];
-            $body               = fopen($filePath, 'rb');
+            $contentType = empty($contentType) ? MimeType::fileMime($filePath) : $contentType;
+            $options     = ['ContentType' => $contentType, 'ACL' => $acl];
+            $body        = fopen($filePath, 'rb');
         } else {
             $body = $filePath;
+            if (! empty($contentType)) {
+                $options['ContentType'] = $contentType;
+            }
         }
 
         try {
@@ -119,7 +136,7 @@ class COS extends Driver
      *
      * @return void
      */
-    public function checkCors(string $domain = "*", string $id = 'all')
+    public function checkCors(string $domain = "*", string $id = 'all'): void
     {
     }
 
@@ -151,7 +168,7 @@ class COS extends Driver
      * @param string $contentType 头部类型
      * @param int    $expire      过期时间(秒),默认3600
      *
-     * @return array
+     * @return array<string, string>
      */
     public function putUrl(string $key, string $contentType = "application/octet-stream", int $expire = 3600): array
     {

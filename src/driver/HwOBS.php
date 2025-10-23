@@ -9,22 +9,6 @@ use Obs\ObsException;
 class HwOBS extends Driver
 {
     /**
-     * 配置信息数组
-     *
-     * @var array
-     */
-    protected $config = [
-        'key'             => '*** Provide your Access Key ***',
-        'secret'          => '*** Provide your Secret Key ***',
-        'endpoint'        => 'https://your-endpoint',
-        'ssl_verify'      => false,
-        'max_retry_count' => 3,
-        'socket_timeout'  => 20,
-        'connect_timeout' => 20,
-        'chunk_size'      => 8196,
-    ];
-
-    /**
      * 连接客户端
      *
      * @var ObsClient
@@ -34,16 +18,47 @@ class HwOBS extends Driver
     /**
      * 构造函数
      *
-     * @param array $config 配置参数
+     * @param array<string, mixed> $config 统一格式的配置参数
      */
     public function __construct(array $config = [])
     {
-        $this->config['endpoint'] = $config['endpoint'] ?? '';
-        $this->config['key']      = $config['key'] ?? '';
-        $this->config['secret']   = $config['secret'] ?? '';
-        $this->bucket             = $config['bucket'] ?? '';
-
-        $this->client = new ObsClient($this->config);
+        // 使用父类的标准化配置方法
+        $this->config = $this->normalizeConfig($config);
+        
+        // 转换统一配置为华为OBS SDK所需的特定格式
+        $obsConfig = $this->getDriverConfig();
+        
+        $this->client = new ObsClient($obsConfig);
+    }
+    
+    /**
+     * 获取华为OBS驱动特定的配置
+     *
+     * @return array{
+     *     key: string,
+     *     secret: string,
+     *     endpoint: string,
+     *     region: string,
+     *     ssl_verify: bool,
+     *     socket_timeout: int,
+     *     connect_timeout: int,
+     *     ...
+     * }
+     */
+    protected function getDriverConfig(): array
+    {
+        $config = [
+            'key'             => $this->config['key'],
+            'secret'          => $this->config['secret'],
+            'endpoint'        => $this->config['endpoint'],
+            'region'          => $this->config['region'] ?? '',
+            'ssl_verify'      => $this->config['ssl_verify'],
+            'socket_timeout'  => $this->config['timeout'],
+            'connect_timeout' => $this->config['connect_timeout'],
+        ];
+        
+        // 合并驱动特定选项
+        return array_merge($config, $this->config['driver_options'] ?? []);
     }
 
     /**
@@ -51,10 +66,12 @@ class HwOBS extends Driver
      *
      * @param string $key      对象key
      * @param string $filePath 本地文件路径
+     * @param string $acl      权限名称 private,public-read
+     * @param string $contentType 头部类型
      *
      * @return bool
      */
-    public function put(string $key, string $filePath): bool
+    public function put(string $key, string $filePath, string $acl = 'private', string $contentType = ''): bool
     {
         $param = [
             'Bucket' => $this->bucket,
@@ -62,10 +79,14 @@ class HwOBS extends Driver
         ];
         if (is_file($filePath)) {
             $param['SourceFile'] = $filePath;
-            $contentType         = MimeType::fileMime($filePath);
-            $param['Headers']    = ['Content-Type' => $contentType];
+            $contentType         = empty($contentType) ? MimeType::fileMime($filePath) : $contentType;
+            $param['Headers']    = ['Content-Type' => $contentType, 'x-obs-acl' => $acl];
         } else {
             $param['Body'] = $filePath;
+            if (! empty($contentType)) {
+                $param['Headers']['Content-Type'] = $contentType;
+            }
+            $param['Headers']['x-obs-acl'] = $acl;
         }
 
         try {
@@ -115,7 +136,7 @@ class HwOBS extends Driver
      *
      * @return void
      */
-    public function checkCors(string $domain = "*", string $id = 'all')
+    public function checkCors(string $domain = "*", string $id = 'all'): void
     {
         $domain = '*';
         $this->client->setBucketCors(
@@ -190,7 +211,7 @@ class HwOBS extends Driver
      * @param string $contentType 头部类型
      * @param int    $expire      过期时间(秒),默认3600
      *
-     * @return array
+     * @return array<string, string>
      */
     public function putUrl(string $key, string $contentType = "application/octet-stream", int $expire = 3600): array
     {

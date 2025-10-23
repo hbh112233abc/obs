@@ -11,43 +11,62 @@ use bingher\obs\MimeType;
 class S3 extends Driver
 {
     /**
-     * 配置信息数组
-     *
-     * @var array
-     */
-    protected $config = [
-        'version'                          => 'latest',
-        'region'                           => 'cn-hw',
-        'endpoint'                         => 'http://192.168.103.38:9000',
-        'use_path_style_endpoint'          => true,
-        'http'                             => ['verify' => false],
-        'credentials'                      => [
-            'key'    => 'minioadmin',
-            'secret' => 'minioadmin',
-        ],
-        'suppress_php_deprecation_warning' => true,
-    ];
-
-    /**
-     * 连接客户端
-     *
-     * @var S3Client
-     */
-    public $client;
-
-    /**
      * 构造函数
      *
-     * @param array $config 配置信息
+     * @param array<string, mixed> $config 统一格式的配置参数
      */
     public function __construct(array $config = [])
     {
-        $this->config['endpoint']              = $config['endpoint'] ?? '';
-        $this->config['credentials']['key']    = $config['key'] ?? '';
-        $this->config['credentials']['secret'] = $config['secret'] ?? '';
-        $this->bucket                          = $config['bucket'] ?? '';
+        // 使用父类的标准化配置方法
+        $this->config = $this->normalizeConfig($config);
 
-        $this->client = new S3Client($this->config);
+        // 转换统一配置为S3 SDK所需的特定格式
+        $s3Config = $this->getDriverConfig();
+
+        $this->client = new S3Client($s3Config);
+    }
+
+    /**
+     * 获取S3驱动特定的配置
+     *
+     * @return array{
+     *     version: string,
+     *     region: string,
+     *     endpoint: string,
+     *     use_path_style_endpoint: bool,
+     *     http: array{
+     *         verify: bool,
+     *         timeout: int,
+     *         connect_timeout: int,
+     *         ...
+     *     },
+     *     credentials: array{
+     *         key: string,
+     *         secret: string
+     *     },
+     *     ...
+     * }
+     */
+    protected function getDriverConfig(): array
+    {
+        $config = [
+            'version'                 => $this->config['driver_options']['version'] ?? 'latest',
+            'region'                  => $this->config['region'] ?: 'cn-beijing',
+            'endpoint'                => $this->config['endpoint'],
+            'use_path_style_endpoint' => $this->config['driver_options']['use_path_style_endpoint'] ?? true,
+            'http'                    => [
+                'verify'          => $this->config['ssl_verify'],
+                'timeout'         => $this->config['timeout'],
+                'connect_timeout' => $this->config['connect_timeout'],
+            ],
+            'credentials'             => [
+                'key'    => $this->config['key'],
+                'secret' => $this->config['secret'],
+            ],
+        ];
+
+        // 合并驱动特定选项
+        return array_merge($config, $this->config['driver_options'] ?? []);
     }
 
     /**
@@ -55,54 +74,61 @@ class S3 extends Driver
      *
      * @param string $key      对象key
      * @param string $filePath 本地文件路径
-     * @param string $acl      权限名称 private,public
+     * @param string $acl      权限名称 private,public-read
+     * @param string $contentType 头部类型
      *
      * @return bool
      */
-    public function put(string $key, string $filePath, string $acl = 'private'): bool
+    public function put(string $key, string $filePath, string $acl = 'private', string $contentType = ''): bool
     {
         if (! is_file($filePath)) {
             throw new \Exception("File not found: " . $filePath);
         }
-        $contentType = MimeType::fileMime($filePath);
+        $contentType = empty($contentType) ? MimeType::fileMime($filePath) : $contentType;
         // Using stream instead of file path
         $source = fopen($filePath, 'rb');
+        $result = null;
 
-        $uploader = new ObjectUploader(
-            $this->client,
-            $this->bucket,
-            $key,
-            $source,
-            $acl,
-            ['ContentType' => $contentType]
-        );
+        try {
+            $uploader = new ObjectUploader(
+                $this->client,
+                $this->bucket,
+                $key,
+                $source,
+                $acl,
+                ['ContentType' => $contentType]
+            );
 
-        do {
-            try {
-                $result = $uploader->upload();
-                if ($result["@metadata"]["statusCode"] == '200') {
-                    // print('<p>File successfully uploaded to ' . $result["ObjectURL"] . '.</p>');
+            do {
+                try {
+                    $result = $uploader->upload();
+                    if ($result["@metadata"]["statusCode"] == '200') {
+                        // print('<p>File successfully uploaded to ' . $result["ObjectURL"] . '.</p>');
+                    }
+                    // dump($result);
+                } catch (MultipartUploadException $e) {
+                    rewind($source);
+                    $uploader = new MultipartUploader(
+                        $this->client,
+                        $source,
+                        [
+                            'acl'   => $acl,
+                            'state' => $e->getState(),
+                        ]
+                    );
+                } catch (\Exception $e) {
+                    $this->error = $e->getMessage();
+                    return false;
                 }
-                // dump($result);
-            } catch (MultipartUploadException $e) {
-                rewind($source);
-                $uploader = new MultipartUploader(
-                    $this->client,
-                    $source,
-                    [
-                        'acl'   => $acl,
-                        'state' => $e->getState(),
-                    ]
-                );
-            } catch (\Exception $e) {
-                $this->error = $e->getMessage();
-                return false;
+            } while (! isset($result));
+
+            return true;
+        } finally {
+            // 确保文件资源正确关闭
+            if (is_resource($source)) {
+                fclose($source);
             }
-        } while (! isset($result));
-
-        fclose($source);
-
-        return true;
+        }
     }
 
     /**
