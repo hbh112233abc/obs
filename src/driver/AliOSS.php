@@ -46,7 +46,7 @@ class AliOSS extends Driver
             $this->config['endpoint']
         );
         $this->client->setUseSSL(false);
-        $this->checkCors();
+        // $this->checkCors();
     }
 
     /**
