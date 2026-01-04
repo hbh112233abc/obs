@@ -50,19 +50,20 @@ class S3 extends Driver
     protected function getDriverConfig(): array
     {
         $config = [
-            'version'                 => $this->config['driver_options']['version'] ?? 'latest',
-            'region'                  => $this->config['region'] ?: 'cn-beijing',
-            'endpoint'                => $this->config['endpoint'],
-            'use_path_style_endpoint' => $this->config['driver_options']['use_path_style_endpoint'] ?? true,
-            'http'                    => [
+            'version'                          => $this->config['driver_options']['version'] ?? 'latest',
+            'region'                           => $this->config['region'] ?: 'cn-beijing',
+            'endpoint'                         => $this->config['endpoint'],
+            'use_path_style_endpoint'          => $this->config['driver_options']['use_path_style_endpoint'] ?? true,
+            'http'                             => [
                 'verify'          => $this->config['ssl_verify'],
                 'timeout'         => $this->config['timeout'],
                 'connect_timeout' => $this->config['connect_timeout'],
             ],
-            'credentials'             => [
+            'credentials'                      => [
                 'key'    => $this->config['key'],
                 'secret' => $this->config['secret'],
             ],
+            'suppress_php_deprecation_warning' => true,
         ];
 
         // 合并驱动特定选项
